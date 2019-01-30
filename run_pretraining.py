@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import os
 import modeling
 import optimization
@@ -60,6 +61,8 @@ flags.DEFINE_integer(
 flags.DEFINE_bool("do_train", False, "Whether to run training.")
 
 flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
+
+flags.DEFINE_bool("do_embed", False, "Whether to embed the dev set.")
 
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
@@ -183,7 +186,6 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
           train_op=train_op,
           scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.EVAL:
-
       def metric_fn(masked_lm_example_loss, masked_lm_log_probs, masked_lm_ids,
                     masked_lm_weights, next_sentence_example_loss,
                     next_sentence_log_probs, next_sentence_labels):
@@ -224,13 +226,28 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
           masked_lm_weights, next_sentence_example_loss,
           next_sentence_log_probs, next_sentence_labels
       ])
+      
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=total_loss,
           eval_metrics=eval_metrics,
           scaffold_fn=scaffold_fn)
+    elif mode == tf.estimator.ModeKeys.PREDICT:
+      predictions = {
+          "input_ids": input_ids,
+          "input_mask": input_mask,
+          "segment_ids": segment_ids,
+          "next_sentence_labels": next_sentence_labels,
+          "embedded_input": model.get_embedding_output(),
+          "transformed_input": model.get_sequence_output()
+      }
+      
+      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+          mode=mode,
+          predictions=predictions,
+          scaffold_fn=scaffold_fn)
     else:
-      raise ValueError("Only TRAIN and EVAL modes are supported: %s" % (mode))
+      raise ValueError("Only TRAIN, EVAL, and PREDICT modes are supported: %s" % (mode))
 
     return output_spec
 
@@ -324,7 +341,7 @@ def gather_indexes(sequence_tensor, positions):
 def input_fn_builder(input_files,
                      max_seq_length,
                      max_predictions_per_seq,
-                     is_training,
+                     mode,
                      num_cpu_threads=4):
   """Creates an `input_fn` closure to be passed to TPUEstimator."""
 
@@ -351,7 +368,7 @@ def input_fn_builder(input_files,
 
     # For training, we want a lot of parallel reading and shuffling.
     # For eval, we want no shuffling and parallel reading doesn't matter.
-    if is_training:
+    if mode == tf.estimator.ModeKeys.TRAIN:
       d = tf.data.Dataset.from_tensor_slices(tf.constant(input_files))
       d = d.repeat()
       d = d.shuffle(buffer_size=len(input_files))
@@ -364,14 +381,18 @@ def input_fn_builder(input_files,
       d = d.apply(
           tf.contrib.data.parallel_interleave(
               tf.data.TFRecordDataset,
-              sloppy=is_training,
+              sloppy=True,
               cycle_length=cycle_length))
       d = d.shuffle(buffer_size=100)
-    else:
+    elif mode == tf.estimator.ModeKeys.EVAL:
       d = tf.data.TFRecordDataset(input_files)
       # Since we evaluate for a fixed number of steps we don't want to encounter
       # out-of-range exceptions.
       d = d.repeat()
+    elif mode == tf.estimator.ModeKeys.PREDICT:
+      d = tf.data.TFRecordDataset(input_files)
+    else:
+        raise ValueError("mode must be TRAIN, EVAL or PREDICT")
 
     # We must `drop_remainder` on training because the TPU requires fixed
     # size dimensions. For eval, we assume we are evaluating on the CPU or GPU
@@ -402,12 +423,58 @@ def _decode_record(record, name_to_features):
 
   return example
 
+def write_instance_to_example_files(generator_fn, output_files):
+  """Create TF example files from `TrainingInstance`s."""
+  writers = []
+  for output_file in output_files:
+    writers.append(tf.python_io.TFRecordWriter(output_file))
+
+  writer_index = 0
+
+  total_written = 0
+  for (inst_index, sample) in enumerate(generator_fn()):
+    input_ids = sample["input_ids"]
+    input_mask = sample["input_mask"]
+    segment_ids = sample["segment_ids"]
+    next_sentence_labels = sample["next_sentence_labels"]
+    embedded_input = sample["embedded_input"]
+    transformed_input = sample["transformed_input"]
+
+    features = collections.OrderedDict()
+    features["input_ids"] = create_int_feature(input_ids)
+    features["input_mask"] = create_int_feature(input_mask)
+    features["segment_ids"] = create_int_feature(segment_ids)
+    features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
+    features["embedded_input"] = create_float_feature(embedded_input)
+    features["transformed_input"] = create_float_feature(transformed_input)
+    tf_example = tf.train.Example(features=tf.train.Features(feature=features))
+
+    writers[writer_index].write(tf_example.SerializeToString())
+    writer_index = (writer_index + 1) % len(writers)
+
+    total_written += 1
+
+  for writer in writers:
+    writer.close()
+
+  tf.logging.info("Wrote %d total instances", total_written)
+
+
+def create_int_feature(values):
+  feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
+  return feature
+
+
+def create_float_feature(values):
+  feature = tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
+  return feature
+
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
 
-  if not FLAGS.do_train and not FLAGS.do_eval:
-    raise ValueError("At least one of `do_train` or `do_eval` must be True.")
+  if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_embed:
+    raise ValueError("At least one of `do_train` or `do_eval` or `do_embed` must be True.")
 
   bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -462,7 +529,7 @@ def main(_):
         input_files=input_files,
         max_seq_length=FLAGS.max_seq_length,
         max_predictions_per_seq=FLAGS.max_predictions_per_seq,
-        is_training=True)
+        mode=tf.estimator.ModeKeys.TRAIN)
     estimator.train(input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
 
   if FLAGS.do_eval:
@@ -473,7 +540,7 @@ def main(_):
         input_files=input_files,
         max_seq_length=FLAGS.max_seq_length,
         max_predictions_per_seq=FLAGS.max_predictions_per_seq,
-        is_training=False)
+        mode=tf.estimator.ModeKeys.EVAL)
 
     result = estimator.evaluate(
         input_fn=eval_input_fn, steps=FLAGS.max_eval_steps)
@@ -484,6 +551,19 @@ def main(_):
       for key in sorted(result.keys()):
         tf.logging.info("  %s = %s", key, str(result[key]))
         writer.write("%s = %s\n" % (key, str(result[key])))
+  if FLAGS.do_embed:
+    tf.logging.info("***** Running embedding *****")
+    tf.logging.info("Batch size = %d", FLAGS.eval_batch_size)
+
+    predict_input_fn = input_fn_builder(
+        input_files=input_files,
+        max_seq_length=FLAGS.max_seq_length,
+        max_predictions_per_seq=FLAGS.max_predictions_per_seq,
+        mode=tf.estimator.ModeKeys.PREDICT)
+
+    def sample_generator():
+        return estimator.predict(predict_input_fn, yield_single_examples=True)
+    write_instance_to_example_files(sample_generator, [f + ".embedded" for f in input_files])
 
 
 if __name__ == "__main__":
