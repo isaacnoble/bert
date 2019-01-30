@@ -347,7 +347,10 @@ def input_fn_builder(input_files,
 
   def input_fn(params):
     """The actual input function."""
-    batch_size = params["batch_size"]
+    if "batch_size" in params:
+        batch_size = params["batch_size"]
+    else:
+        batch_size = 1
 
     name_to_features = {
         "input_ids":
@@ -432,7 +435,7 @@ def write_instance_to_example_files(generator_fn, output_files):
   writer_index = 0
 
   total_written = 0
-  for (inst_index, sample) in enumerate(generator_fn()):
+  for sample in generator_fn():
     input_ids = sample["input_ids"]
     input_mask = sample["input_mask"]
     segment_ids = sample["segment_ids"]
