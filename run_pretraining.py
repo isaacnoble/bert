@@ -427,7 +427,7 @@ def _decode_record(record, name_to_features):
 
   return example
 
-def write_instance_to_example_files(generator_fn, output_files, splits=10):
+def write_instance_to_example_files(generator_fn, output_files, splits=100):
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
@@ -470,7 +470,10 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
         start = time.time()
 
   for writer in writers:
-    writer.close()
+    try:
+        writer.close()
+    except:
+        print("Error closing writer!")
 
   tf.logging.info("Wrote %d total instances", total_written)
 
