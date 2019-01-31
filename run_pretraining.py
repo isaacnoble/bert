@@ -426,11 +426,12 @@ def _decode_record(record, name_to_features):
 
   return example
 
-def write_instance_to_example_files(generator_fn, output_files):
+def write_instance_to_example_files(generator_fn, output_files, splits=10):
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
-    writers.append(tf.python_io.TFRecordWriter(output_file))
+    for split in range(splits):
+        writers.append(tf.python_io.TFRecordWriter(output_file + "-" + str(split)))
 
   writer_index = 0
 
@@ -460,6 +461,9 @@ def write_instance_to_example_files(generator_fn, output_files):
     writer_index = (writer_index + 1) % len(writers)
 
     total_written += 1
+
+    if total_written % 10000 == 0:
+        tf.logging.info("Wrote %d instances", total_written)
 
   for writer in writers:
     writer.close()
