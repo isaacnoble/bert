@@ -437,6 +437,7 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
   writer_index = 0
 
   total_written = 0
+  num_to_print = 1000
   start = time.time()
   for sample in generator_fn():
     input_ids = sample["input_ids"]
@@ -464,8 +465,9 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
 
     total_written += 1
 
-    if total_written % 1000 == 0:
-        print("Wrote {} instances at {} sec/example".format(total_written, (time.time() - start) / total_written))
+    if total_written % num_to_print == 0:
+        print("Wrote {} instances at {} sec/example".format(total_written, (time.time() - start) / num_to_print))
+        start = time.time()
 
   for writer in writers:
     writer.close()
