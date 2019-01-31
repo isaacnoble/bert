@@ -23,6 +23,7 @@ import os
 import modeling
 import optimization
 import tensorflow as tf
+import time
 
 flags = tf.flags
 
@@ -436,6 +437,7 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
   writer_index = 0
 
   total_written = 0
+  start = time.time()
   for sample in generator_fn():
     input_ids = sample["input_ids"]
     input_mask = sample["input_mask"]
@@ -462,8 +464,8 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
 
     total_written += 1
 
-    if total_written % 100 == 0:
-        print("Wrote %d instances", total_written)
+    if total_written % 1000 == 0:
+        print("Wrote {} instances at {} sec/example".format(total_written, (time.time() - start) / total_written))
 
   for writer in writers:
     writer.close()
@@ -564,8 +566,6 @@ def main(_):
         writer.write("%s = %s\n" % (key, str(result[key])))
   if FLAGS.do_embed:
     tf.logging.info("***** Running embedding *****")
-    tf.logging.info("Batch size = %d", FLAGS.eval_batch_size)
-
     predict_input_fn = input_fn_builder(
         input_files=input_files,
         max_seq_length=FLAGS.max_seq_length,
