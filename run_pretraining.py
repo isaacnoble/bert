@@ -462,8 +462,8 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
 
     total_written += 1
 
-    if total_written % 10000 == 0:
-        tf.logging.info("Wrote %d instances", total_written)
+    if total_written % 100 == 0:
+        print("Wrote %d instances", total_written)
 
   for writer in writers:
     writer.close()
