@@ -427,7 +427,7 @@ def _decode_record(record, name_to_features):
 
   return example
 
-def write_instance_to_example_files(generator_fn, output_files, splits=100):
+def write_instance_to_example_files(generator_fn, output_files, splits=1024):
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
