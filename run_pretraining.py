@@ -439,6 +439,7 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
   total_written = 0
   num_to_print = 1000
   start = time.time()
+  printed = False
   for sample in generator_fn():
     input_ids = sample["input_ids"]
     input_mask = sample["input_mask"]
@@ -448,6 +449,9 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     transformed_input = sample["transformed_input"]
     embedded_size = embedded_input.shape[-1]
     transformed_size = transformed_input.shape[-1]
+
+    if not printed:
+        print("embedded_size: {}, transformed_size: {}".format(embedded_size, transformed_size))
 
     features = collections.OrderedDict()
     features["input_ids"] = create_int_feature(input_ids)
