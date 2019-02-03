@@ -427,7 +427,7 @@ def _decode_record(record, name_to_features):
 
   return example
 
-def write_instance_to_example_files(generator_fn, output_files, splits=1024):
+def write_instance_to_example_files(generator_fn, output_files, splits=10):
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
@@ -468,6 +468,7 @@ def write_instance_to_example_files(generator_fn, output_files, splits=1024):
     if total_written % num_to_print == 0:
         print("Wrote {} instances at {} sec/example".format(total_written, (time.time() - start) / num_to_print))
         start = time.time()
+        break
 
   for writer in writers:
     try:
