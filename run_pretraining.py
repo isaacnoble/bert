@@ -580,7 +580,7 @@ def main(_):
 
     def sample_generator():
         return estimator.predict(predict_input_fn, yield_single_examples=True)
-    write_instance_to_example_files(sample_generator, [f + ".embedded" for f in input_files])
+    write_instance_to_example_files(sample_generator, [f + ".embedded_sml" for f in input_files])
 
 
 if __name__ == "__main__":
