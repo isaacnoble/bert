@@ -449,9 +449,9 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     # embedded_size = embedded_input.shape[-1]
     # transformed_size = transformed_input.shape[-1]
 
-    assert len(input_ids) == max_seq_length
-    assert len(input_mask) == max_seq_length
-    assert len(segment_ids) == max_seq_length
+    assert len(input_ids) == FLAGS.max_seq_length
+    assert len(input_mask) == FLAGS.max_seq_length
+    assert len(segment_ids) == FLAGS.max_seq_length
     assert len(next_sentence_labels) == 1
 
     features = collections.OrderedDict()
