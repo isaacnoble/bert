@@ -455,9 +455,9 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     assert len(next_sentence_labels) == 1
 
     features = collections.OrderedDict()
-    features["input_ids"] = create_int_feature(input_ids)
-    features["input_mask"] = create_int_feature(input_mask)
-    features["segment_ids"] = create_int_feature(segment_ids)
+    # features["input_ids"] = create_int_feature(input_ids)
+    # features["input_mask"] = create_int_feature(input_mask)
+    # features["segment_ids"] = create_int_feature(segment_ids)
     features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
     # features["embedded_input"] = create_float_feature(embedded_input.flatten())
     # features["transformed_input"] = create_float_feature(transformed_input.flatten())
