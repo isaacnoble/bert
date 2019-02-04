@@ -450,15 +450,16 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     # transformed_size = transformed_input.shape[-1]
 
     assert len(input_ids) == FLAGS.max_seq_length
+    assert len(input_ids) == 512
     assert len(input_mask) == FLAGS.max_seq_length
     assert len(segment_ids) == FLAGS.max_seq_length
     assert len(next_sentence_labels) == 1
 
     features = collections.OrderedDict()
-    # features["input_ids"] = create_int_feature(input_ids)
+    features["input_ids"] = create_int_feature(input_ids)
     # features["input_mask"] = create_int_feature(input_mask)
     # features["segment_ids"] = create_int_feature(segment_ids)
-    features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
+    # features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
     # features["embedded_input"] = create_float_feature(embedded_input.flatten())
     # features["transformed_input"] = create_float_feature(transformed_input.flatten())
     # features["embedded_size"] = create_int_feature([embedded_size])
