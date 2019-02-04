@@ -427,7 +427,7 @@ def _decode_record(record, name_to_features):
 
   return example
 
-def write_instance_to_example_files(generator_fn, output_files, splits=10):
+def write_instance_to_example_files(generator_fn, output_files, hidden_size, splits=10):
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
@@ -444,26 +444,28 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     input_mask = sample["input_mask"]
     segment_ids = sample["segment_ids"]
     next_sentence_labels = sample["next_sentence_labels"]
-    # embedded_input = sample["embedded_input"]
-    # transformed_input = sample["transformed_input"]
-    # embedded_size = embedded_input.shape[-1]
-    # transformed_size = transformed_input.shape[-1]
+    embedded_input = sample["embedded_input"]
+    transformed_input = sample["transformed_input"]
+    embedded_size = embedded_input.shape[-1]
+    transformed_size = transformed_input.shape[-1]
 
     assert len(input_ids) == FLAGS.max_seq_length
-    assert len(input_ids) == 128
     assert len(input_mask) == FLAGS.max_seq_length
     assert len(segment_ids) == FLAGS.max_seq_length
     assert len(next_sentence_labels) == 1
 
+    assert len(embedded_input) == FLAGS.max_seq_length * hidden_size
+    assert len(transformed_size) == FLAGS.max_seq_length * hidden_size
+
     features = collections.OrderedDict()
     features["input_ids"] = create_int_feature(input_ids)
-    # features["input_mask"] = create_int_feature(input_mask)
-    # features["segment_ids"] = create_int_feature(segment_ids)
-    # features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
-    # features["embedded_input"] = create_float_feature(embedded_input.flatten())
-    # features["transformed_input"] = create_float_feature(transformed_input.flatten())
-    # features["embedded_size"] = create_int_feature([embedded_size])
-    # features["transformed_size"] = create_int_feature([transformed_size])
+    features["input_mask"] = create_int_feature(input_mask)
+    features["segment_ids"] = create_int_feature(segment_ids)
+    features["next_sentence_labels"] = create_int_feature(next_sentence_labels)
+    features["embedded_input"] = create_float_feature(embedded_input.flatten())
+    features["transformed_input"] = create_float_feature(transformed_input.flatten())
+    features["embedded_size"] = create_int_feature([embedded_size])
+    features["transformed_size"] = create_int_feature([transformed_size])
     tf_example = tf.train.Example(features=tf.train.Features(feature=features))
 
     writers[writer_index].write(tf_example.SerializeToString())
@@ -586,7 +588,7 @@ def main(_):
 
     def sample_generator():
         return estimator.predict(predict_input_fn, yield_single_examples=True)
-    write_instance_to_example_files(sample_generator, [f + ".embedded_sml" for f in input_files])
+    write_instance_to_example_files(sample_generator, [f + ".embedded_sml" for f in input_files], bert_config.hidden_size)
 
 
 if __name__ == "__main__":
