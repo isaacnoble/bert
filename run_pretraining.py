@@ -49,7 +49,7 @@ flags.DEFINE_string(
     "Initial checkpoint (usually from a pre-trained BERT model).")
 
 flags.DEFINE_integer(
-    "max_seq_length", 512,
+    "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization. "
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded. Must match data generation.")
@@ -450,7 +450,7 @@ def write_instance_to_example_files(generator_fn, output_files, splits=10):
     # transformed_size = transformed_input.shape[-1]
 
     assert len(input_ids) == FLAGS.max_seq_length
-    assert len(input_ids) == 512
+    assert len(input_ids) == 128
     assert len(input_mask) == FLAGS.max_seq_length
     assert len(segment_ids) == FLAGS.max_seq_length
     assert len(next_sentence_labels) == 1
