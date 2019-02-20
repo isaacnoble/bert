@@ -127,7 +127,7 @@ def input_fn_builder(features, seq_length, batch_size=8, num_cpu_threads=4):
           tf.contrib.data.map_and_batch(
               lambda u_id, is_c, ids, mask, types: { 
                 "unique_ids": u_id,
-                "is_context": is_c,
+                "is_contexts": is_c,
                 "input_ids": ids,
                 "input_mask": mask,
                 "input_type_ids": types
