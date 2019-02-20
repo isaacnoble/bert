@@ -361,16 +361,16 @@ def write_instance_to_example_files(generator_fn, output_files, hidden_size, spl
   total_written = 0
   num_to_print = 1000
   start = time.time()
-  for (context, real) in generator_fn():
-    context_ids = context["input_ids"]
-    context_mask = context["input_mask"]
-    context_embeddings = context["embeddings"]
-    context_transformer = context["transformer"]
+  for (context_out, real_out, context_features, real_features) in generator_fn():
+    context_ids = context_features.input_ids
+    context_mask = context_features.input_mask
+    context_embeddings = context_out["embeddings"]
+    context_transformer = context_out["transformer"]
 
-    real_ids = real["input_ids"]
-    real_mask = real["input_mask"]
-    real_embeddings = real["embeddings"]
-    real_transformer = real["transformer"]
+    real_ids = real_features.input_ids
+    real_mask = real_features.input_mask
+    real_embeddings = real_out["embeddings"]
+    real_transformer = real_out["transformer"]
     embedded_size = real_embeddings.shape[-1]
     transformed_size = real_transformer.shape[-1]
 
@@ -492,7 +492,7 @@ def main(_):
       unique_id = int(result["unique_id"])
       if unique_id in finished_samples:
         if int(result["is_context"]) == 1:
-          yield (result, finished_samples[unique_id])
+          yield (result, finished_samples[unique_id], context_features[unique_id], real_features[unique_id])
         else:
           yield (finished_samples[unique_id], result)
       else:
