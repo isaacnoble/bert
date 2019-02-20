@@ -503,9 +503,14 @@ def main(_):
             unique_id = int(result["unique_id"])
             if unique_id in finished_samples:
                 if int(result["is_context"]) == 1:
-                    yield (result, finished_samples[unique_id], context_features[unique_id], real_features[unique_id])
+                  context = result
+                  real = finished_samples[unique_id]
+                  
                 else:
-                    yield (finished_samples[unique_id], result, context_features[unique_id], real_features[unique_id])
+                  context = finished_samples[unique_id]
+                  real = result
+                del finished_samples[unique_id]
+                yield (context, real, context_features[unique_id], real_features[unique_id])
             else:
                 finished_samples[unique_id] = result
 
