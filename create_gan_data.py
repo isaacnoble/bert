@@ -494,7 +494,7 @@ def main(_):
         if int(result["is_context"]) == 1:
           yield (result, finished_samples[unique_id], context_features[unique_id], real_features[unique_id])
         else:
-          yield (finished_samples[unique_id], result)
+          yield (finished_samples[unique_id], result, context_features[unique_id], real_features[unique_id])
       else:
         finished_samples[unique_id] = result
 
