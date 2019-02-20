@@ -335,9 +335,9 @@ def build_examples(documents, max_seq_length):
       
       num_tokens = 0
       real_end = context_end
-      while real_end < len(document)-1 and num_tokens + len(document[real_end + 1]) < max_seq_length - 2:
-        real_end += 1
+      while real_end < len(document) and num_tokens + len(document[real_end]) < max_seq_length - 2:
         num_tokens += len(document[real_end])
+        real_end += 1
 
       real_tokens = [token for line in document[context_end:real_end] for token in line]
       if len(real_tokens) > max_seq_length - 2:
