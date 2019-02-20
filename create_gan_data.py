@@ -328,7 +328,7 @@ def build_examples(documents, max_seq_length):
         context_start -= 1
         num_tokens += len(document[context_start])
 
-      context_tokens = [token for token in line for line in document[context_start:context_end]]
+      context_tokens = [token for line in document[context_start:context_end] for token in line]
       
       if len(context_tokens) > max_seq_length - 2:
         raise ValueError('context tokens exceed max seq length')
@@ -339,7 +339,7 @@ def build_examples(documents, max_seq_length):
         real_end += 1
         num_tokens += len(document[real_end])
 
-      real_tokens = [token for token in line for line in document[context_end:real_end]]
+      real_tokens = [token for line in document[context_end:real_end] for token in line]
       if len(real_tokens) > max_seq_length - 2:
         raise ValueError('real tokens exceed max seq length')
       examples.append(
