@@ -94,7 +94,7 @@ class InputFeatures(object):
         self.input_type_ids = input_type_ids
 
 
-def input_fn_builder(features, seq_length, batch_size=8, num_cpu_threads=4):
+def input_fn_builder(features, seq_length, batch_size=1, num_cpu_threads=4):
 
     def _generator():
         for feature in features:
