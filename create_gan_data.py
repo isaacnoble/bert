@@ -96,30 +96,31 @@ class InputFeatures(object):
 
 def input_fn_builder(features, seq_length, batch_size=8, num_cpu_threads=4):
 
-    def generator_fn():
+    def _generator():
         for feature in features:
-            yield tf.constant(
-                feature.unique_id, shape=[],
-                dtype=tf.int32, name="unique_ids"),
-            tf.constant(
-                feature.is_context, shape=[],
-                dtype=tf.int32, name="is_context"),
-            tf.constant(
-                feature.input_ids, shape=[seq_length],
-                dtype=tf.int32, name="input_ids"),
-            tf.constant(
-                feature.input_mask,
-                shape=[seq_length],
-                dtype=tf.int32, name="input_mask"),
-            tf.constant(
-                feature.input_type_ids,
-                shape=[seq_length],
-                dtype=tf.int32, name="input_type_ids")
+            # yield tf.constant(
+            #     feature.unique_id, shape=[],
+            #     dtype=tf.int32, name="unique_ids"),
+            # tf.constant(
+            #     feature.is_context, shape=[],
+            #     dtype=tf.int32, name="is_context"),
+            # tf.constant(
+            #     feature.input_ids, shape=[seq_length],
+            #     dtype=tf.int32, name="input_ids"),
+            # tf.constant(
+            #     feature.input_mask,
+            #     shape=[seq_length],
+            #     dtype=tf.int32, name="input_mask"),
+            # tf.constant(
+            #     feature.input_type_ids,
+            #     shape=[seq_length],
+            #     dtype=tf.int32, name="input_type_ids")
+            yield feature.unique_id, feature.is_context, feature.input_ids, feature.input_mask, feature.input_type_ids
 
     def input_fn(params):
         """The actual input function."""
         d = tf.data.Dataset.from_generator(
-            generator=generator_fn,
+            generator=_generator,
             output_types=(tf.int32, tf.int32, tf.int32, tf.int32, tf.int32),
             output_shapes=((),(),(seq_length),(seq_length),(seq_length)))
 
