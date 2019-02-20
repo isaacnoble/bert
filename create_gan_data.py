@@ -125,7 +125,13 @@ def input_fn_builder(features, seq_length, batch_size=8, num_cpu_threads=4):
 
         d = d.apply(
           tf.contrib.data.map_and_batch(
-              lambda t: { e.name: e for e in t},
+              lambda u_id, is_c, ids, mask, types: { 
+                "unique_ids": u_id,
+                "is_context": is_c,
+                "input_ids": ids,
+                "input_mask": mask,
+                "input_type_ids": types
+              },
               batch_size=batch_size,
               num_parallel_batches=num_cpu_threads,
               drop_remainder=False))
@@ -243,7 +249,7 @@ def convert_examples_to_features(examples, seq_length, tokenizer):
         assert len(input_mask) == seq_length
         assert len(input_type_ids) == seq_length
 
-        if ex_index < 5:
+        if ex_index < 5 or ex_index >= len(examples) - 5:
             tf.logging.info("*** Example ***")
             tf.logging.info("unique_id: %s" % (example.unique_id))
             tf.logging.info("is_context: %s" % (example.is_context))
