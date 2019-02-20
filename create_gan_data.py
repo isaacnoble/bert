@@ -453,7 +453,10 @@ def main(_):
   for input_file in input_files:
     tf.logging.info("  %s", input_file)
 
-  examples = build_examples(read_documents(input_files, tokenizer), FLAGS.max_seq_length)
+  documents = read_documents(input_files, tokenizer)
+  tf.logging.info("*** Read in %i documents ***", len(documents))
+  examples = build_examples(documents, FLAGS.max_seq_length)
+  tf.logging.info("*** Generated %i examples ***", len(examples))
 
   features = convert_examples_to_features(
       examples=examples, seq_length=FLAGS.max_seq_length, tokenizer=tokenizer)
