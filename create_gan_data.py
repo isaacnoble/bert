@@ -419,7 +419,9 @@ def write_instance_to_example_files(generator_fn, output_files, hidden_size, spl
             print("Wrote {} instances at {} sec/example".format(total_written,
                                                                 (time.time() - start) / num_to_print))
             start = time.time()
-            break
+        
+        if total_written > 20000:
+          break
 
     for writer in writers:
         try:
