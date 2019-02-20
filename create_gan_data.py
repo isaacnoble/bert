@@ -57,7 +57,7 @@ flags.DEFINE_bool(
     "Whether to lower case the input text. Should be True for uncased "
     "models and False for cased models.")
 
-flags.DEFINE_integer("batch_size", 32, "Batch size for predictions.")
+flags.DEFINE_integer("batch_size", 1, "Batch size for predictions.")
 
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
