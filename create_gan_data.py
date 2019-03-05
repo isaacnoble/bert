@@ -352,7 +352,7 @@ def build_examples(documents, max_seq_length):
     return examples
 
 
-def write_instance_to_example_files(generator_fn, output_files, hidden_size, splits=100):
+def write_instance_to_example_files(generator_fn, output_files, hidden_size, splits=100, max_instances=None):
     """Create TF example files from `TrainingInstance`s."""
     writers = []
     for output_file in output_files:
@@ -419,9 +419,10 @@ def write_instance_to_example_files(generator_fn, output_files, hidden_size, spl
             print("Wrote {} instances at {} sec/example".format(total_written,
                                                                 (time.time() - start) / num_to_print))
             start = time.time()
-        
-        if total_written > 20000:
-          break
+
+        if max_instances and total_written > max_instances:
+            print ("Exiting with {} written out of {} requested".format(total_written, max_instances))
+            break
 
     for writer in writers:
         try:
